@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EZ Checker - Scan History</title>
+    <!-- மொபைல் சப்போர்ட்டுக்கான மிக முக்கியமான Viewport Tag -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; }
+
+        .top-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; height: 80px; padding: 0 40px; box-sizing: border-box;
+            position: absolute; top: 0; left: 0; z-index: 20;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2); 
+        }
+
+        .nav-logo-area { display: flex; align-items: center; }
+        .nav-logo-area img {
+            width: 60px; filter: drop-shadow(0 0 10px #00ffff); animation: logoGlow 3s infinite;
+        }
+
+        .nav-btn-area { display: flex; gap: 15px; }
+
+        /* === UNIFIED BUTTON STYLES === */
+        .nav-btn, .visit-link {
+            height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.15); color: white; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+            transition: 0.3s; font-size: 1rem; padding: 0 20px; box-sizing: border-box;
+        }
+
+        .nav-btn:hover, .visit-link:hover {
+            background: rgba(0,255,255,0.35); box-shadow: 0 0 15px #00ffff;
+            border-color: #00ffff; color: white;
+        }
+
+        .nav-btn.logout { border: 1px solid rgba(255,60,60,0.3); background: rgba(255,60,60,0.15); }
+        .nav-btn.logout:hover { background: rgba(255,60,60,0.35); box-shadow: 0 0 15px #ff3c3c; border-color: #ff3c3c; color: white;}
+
+        .history-wrapper {
+            display: flex; width: 100vw; height: 100vh; padding: 100px 40px 40px 40px; 
+            box-sizing: border-box; position: relative; z-index: 10;
+        }
+
+        .panel-box {
+            flex: 1; height: 100%; background: rgba(10, 15, 25, 0.65); backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 15px; padding: 30px;
+            display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box; overflow: hidden;
+        }
+
+        .panel-header {
+            margin-top: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 15px; margin-bottom: 20px; color: white; font-size: 1.5rem;
+        }
+
+        .table-container { flex: 1; overflow-y: auto; overflow-x: auto; padding-right: 10px; }
+        .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .table-container::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: rgba(0,255,255,0.6); }
+
+        table { width: 100%; border-collapse: collapse; color: white; min-width: 600px; /* மொபைலில் டேபிள் சுருங்காமல் இருக்க */ }
+
+        th {
+            position: sticky; top: 0; background: rgba(10, 15, 25, 0.95); padding: 15px;
+            text-align: left; color: #ffffff; font-size: 1.1rem;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3); z-index: 2;
+        }
+
+        td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; vertical-align: middle;}
+        tr:hover td { background: rgba(0, 255, 255, 0.05); }
+
+        .status-Safe { color: #00ff88; font-weight: bold; }
+        .status-Medium { color: #ffd700; font-weight: bold; }
+        .status-High { color: #ff3c3c; font-weight: bold; }
+
+        .empty-msg {
+            text-align: center; color: #aaa; padding: 50px; font-size: 1.2rem;
+            background: rgba(255,255,255,0.02); border-radius: 10px;
+        }
+
+        /* ========================================== */
+        /* TABLET & MOBILE RESPONSIVE DESIGN          */
+        /* ========================================== */
+
+        /* For Tablets (Screens 992px and below) */
+        @media screen and (max-width: 992px) {
+            .history-wrapper {
+                padding: 100px 20px 20px 20px; 
+            }
+            .panel-box {
+                padding: 20px;
+            }
+        }
+
+        /* For Mobile Phones (Screens 600px and below) */
+        @media screen and (max-width: 600px) {
+            .top-nav {
+                padding: 0 15px; 
+            }
+            .nav-logo-area img { 
+                width: 45px; 
+            }
+            .nav-btn, .visit-link {
+                padding: 0 10px;
+                font-size: 0.8rem;
+                height: 35px;
+            }
+            .nav-btn-area {
+                gap: 10px;
+            }
+            .history-wrapper {
+                padding: 90px 10px 15px 10px;
+            }
+            .panel-box {
+                padding: 15px;
+            }
+            .panel-header {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+            th, td { 
+                padding: 10px; 
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body class="cyber-bg">
+
+    <video autoplay muted loop class="bg-video">
+        <source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4">
+    </video>
+
+    <nav class="top-nav">
+        <div class="nav-logo-area">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        </div>
+        
+        <div class="nav-btn-area">
+            <a href="/scanner" class="nav-btn"><i class="fa fa-radar"></i> Scanner</a>
+            <a href="/logout" class="nav-btn logout"><i class="fa fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="history-wrapper">
+        <div class="panel-box">
+            <h3 class="panel-header"><i class="fa fa-clock-rotate-left" style="color: #00ffff;"></i> Security Scan Logs</h3>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;"><i class="fa fa-link" style="color: #00ffff;"></i> Target Payload</th>
+                            <th style="width: 15%;"><i class="fa fa-chart-bar" style="color: #00ffff;"></i> Threat Score</th>
+                            <th style="width: 20%;"><i class="fa fa-shield-halved" style="color: #00ffff;"></i> Risk Level</th>
+                            <th style="width: 20%; text-align: center;"><i class="fa fa-globe" style="color: #00ffff;"></i> Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr>
+                            <td style="font-family: monospace; word-break: break-all; color: #ccc;">
+                                {{ r.scanned_data }}
+                            </td>
+                            <td>{{ r.score }}/100</td>
+                            <td class="status-{% if 'Safe' in r.level %}Safe{% elif 'Medium' in r.level %}Medium{% else %}High{% endif %}">
+                                {% if 'Safe' in r.level %}
+                                    <i class="fa fa-circle-check"></i> 
+                                {% elif 'Medium' in r.level %}
+                                    <i class="fa fa-triangle-exclamation"></i> 
+                                {% else %}
+                                    <i class="fa fa-skull-crossbones"></i> 
+                                {% endif %}
+                                {{ r.level }}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if r.scanned_data.startswith('http') %}
+                                <a href="{{ r.scanned_data }}" target="_blank" class="visit-link" style="margin: 0 auto;">
+                                    <i class="fa fa-arrow-up-right-from-square"></i> Visit
+                                </a>
+                                {% else %}
+                                <span style="color: #555; font-style: italic;">No Web Link</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-msg">
+                                    <i class="fa fa-folder-open fa-3x" style="margin-bottom: 15px; opacity: 0.5;"></i><br>
+                                    No scan history recorded yet.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

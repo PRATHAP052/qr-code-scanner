@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EZ Checker - New Password</title>
+    <!-- மொபைல் சப்போர்ட்டுக்கான வியூபோர்ட் டேக் -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+        /* Prevent duplicate browser icons */
+        input[type="password"]::-ms-reveal { display: none; }
+
+        /* மொபைலில் சரியாகச் சுருங்குவதற்காக Wrapper சேர்க்கப்பட்டுள்ளது */
+        .mobile-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .auth-card {
+            background: rgba(10, 15, 25, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%; /* மொபைலுக்கு ஏற்ப சுருங்க */
+            max-width: 400px; /* லேப்டாப்பில் 400px-க்கு மேல் விரிவடையாமல் இருக்க */
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .password-box {
+            position: relative;
+            width: 100%;
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            height: 50px;
+            padding: 0 45px 0 15px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .eye-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-update {
+            width: 100%;
+            height: 50px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-update:hover {
+            background: rgba(0, 255, 255, 0.3);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        /* மொபைல் போன்களுக்கான பிரத்யேக டிசைன் */
+        @media screen and (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body class="cyber-bg">
+    <video autoplay muted loop class="bg-video"><source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4"></video>
+
+    <!-- Mobile Wrapper உள்ளே சேர்க்கப்பட்டுள்ளது -->
+    <div class="mobile-wrapper">
+        <div class="auth-card">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" style="width: 80px; filter: drop-shadow(0 0 10px #00ffff);">
+            <h2 style="color: white; margin-top: 15px;">New Password</h2>
+            
+            <form method="POST">
+                <div class="password-box">
+                    <input type="password" id="password" name="password" placeholder="Enter New Password" required class="modal-input">
+                    <span class="eye-icon" onclick="togglePassword()"><i class="fa-solid fa-eye" id="eye-icon-logo"></i></span>
+                </div>
+                <button type="submit" class="btn-update">
+                    <i class="fa fa-key" style="color: #00ffff;"></i> Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(){
+            let pass = document.getElementById("password");
+            let icon = document.getElementById("eye-icon-logo");
+            if(pass.type === "password"){
+                pass.type = "text";
+                icon.classList.replace("fa-eye", "fa-eye-slash");
+            } else {
+                pass.type = "password";
+                icon.classList.replace("fa-eye-slash", "fa-eye");
+            }
+        }
+    </script>
+</body>
+</html>

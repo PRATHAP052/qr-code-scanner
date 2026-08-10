@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP</title>
+    <!-- மொபைல் சப்போர்ட்டுக்கான வியூபோர்ட் டேக் -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="cyber-bg">
+
+    <video autoplay muted loop class="bg-video">
+        <source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4">
+    </video>
+
+    <!-- மொபைலில் சரியாகச் சுருங்குவதற்காக Mobile Wrapper சேர்க்கப்பட்டுள்ளது -->
+    <div class="mobile-wrapper">
+        <div class="auth-card">
+
+            <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-img">
+
+            <h2 style="color: white; margin-bottom: 20px; margin-top: 0; font-size: 1.8rem;">Enter OTP</h2>
+
+            <form method="POST">
+
+                <input type="text" name="otp" placeholder="• • • • • •" required style="text-align: center; letter-spacing: 10px; font-size: 1.2rem; font-weight: bold; width: 100%; box-sizing: border-box;">
+
+                <div class="btn-row">
+                    <button type="submit" class="btn">
+                        <i class="fa fa-fingerprint"></i> Verify
+                    </button>
+
+                    <a href="/register" class="btn">
+                        <i class="fa fa-rotate-right"></i> Resend OTP
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</body>
+</html>

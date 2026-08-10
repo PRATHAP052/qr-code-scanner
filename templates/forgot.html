@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EZ Checker - Forgot Password</title>
+    <!-- மொபைல் சப்போர்ட்டுக்கான வியூபோர்ட் டேக் -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="cyber-bg">
+    <video autoplay muted loop class="bg-video">
+        <source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4">
+    </video>
+
+    <!-- மொபைலில் சரியாகச் சுருங்குவதற்காக Mobile Wrapper சேர்க்கப்பட்டுள்ளது -->
+    <div class="mobile-wrapper" style="height: auto; min-height: 400px;">
+        <div class="auth-card">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-img">
+            <h2 style="color: white; margin-bottom: 20px; margin-top: 0; font-size: 1.8rem;">Reset Password</h2>
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">Enter your email to receive a reset link.</p>
+            
+            <form method="POST">
+                <input type="email" name="email" placeholder="Email Address" required 
+                       style="width: 100%; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: white; padding-left: 15px; margin-bottom: 20px; outline: none; box-sizing: border-box;">
+                
+                <div class="btn-row">
+                    <button type="submit" class="btn" style="flex: 1; border-color: rgba(255,255,255,0.3); color: white;">
+                        <i class="fa fa-paper-plane"></i> Send Link
+                    </button>
+                    <a href="/" class="btn" style="flex: 1;">
+                        <i class="fa fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

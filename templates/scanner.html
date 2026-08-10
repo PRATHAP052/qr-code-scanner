@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EZ Checker Dashboard</title>
+    <!-- மொபைல் சப்போர்ட்டுக்கான வியூபோர்ட் டேக் -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; }
+
+        /* === TOP NAVIGATION === */
+        .top-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; height: 80px; padding: 0 40px; box-sizing: border-box;
+            position: absolute; top: 0; left: 0; z-index: 20;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2); 
+        }
+
+        .nav-logo-area { display: flex; align-items: center; }
+        .nav-logo-area img {
+            width: 60px; filter: drop-shadow(0 0 10px #00ffff); animation: logoGlow 3s infinite;
+        }
+
+        .nav-btn-area { display: flex; gap: 15px; }
+
+        /* === UNIFIED BUTTON STYLES === */
+        .nav-btn, .tab-btn, .action-btn, .custom-file-upload {
+            height: 45px; 
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.15); 
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 1rem;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .nav-btn:hover, .tab-btn:hover, .action-btn:hover, .custom-file-upload:hover, .tab-btn.active {
+            background: rgba(0,255,255,0.35);
+            box-shadow: 0 0 15px #00ffff;
+            border-color: #00ffff;
+            color: white;
+        }
+
+        .nav-btn.logout { border: 1px solid rgba(255,60,60,0.3); background: rgba(255,60,60,0.15); }
+        .nav-btn.logout:hover { background: rgba(255,60,60,0.35); box-shadow: 0 0 15px #ff3c3c; border-color: #ff3c3c; }
+
+        /* === SPLIT SCREEN === */
+        .split-screen {
+            display: flex; width: 100vw; height: 100vh; padding: 100px 30px 30px 30px; 
+            box-sizing: border-box; gap: 30px; position: relative; z-index: 10;
+        }
+
+        .panel-box {
+            flex: 1; height: 100%; background: rgba(10, 15, 25, 0.65); backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 15px; padding: 25px;
+            display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box; overflow: hidden;
+        }
+
+        .panel-header {
+            margin-top: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 12px; margin-bottom: 20px; color: white; font-size: 1.3rem;
+        }
+
+        .tab-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 0; } 
+        .tab-content { display: none; flex: 1; flex-direction: column; }
+        .tab-content.active { display: flex; }
+
+        .camera-box {
+            flex: 1; background: black; border-radius: 10px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+        }
+
+        #reader { width: 100%; }
+        
+        .file-upload-wrapper {
+            margin-bottom: 20px; display: flex; align-items: center; gap: 15px;
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;
+            border: 1px dashed rgba(255,255,255,0.3); height: 75px; box-sizing: border-box;
+        }
+        .file-name-display { color: #aaa; font-size: 0.9rem; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+
+        .status-box {
+            width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 15px;
+            box-sizing: border-box; transition: all 0.4s ease;
+        }
+
+        .status-box h2 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        .status-box p { margin: 8px 0 0 0; color: #aaa; font-size: 0.95rem; }
+
+        .modal {
+            display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: rgba(20,5,5,0.9); border: 2px solid #ff3c3c; border-radius: 15px; 
+            margin: 10% auto; padding: 30px; width: 400px; text-align: center; 
+            box-shadow: 0 0 50px rgba(255,60,60,0.5); color: white; box-sizing: border-box;
+        }
+
+        /* ========================================== */
+        /* TABLET & MOBILE RESPONSIVE DESIGN          */
+        /* ========================================== */
+
+        /* Tablets (Screens 992px and below) */
+        @media screen and (max-width: 992px) {
+            body, html { 
+                height: auto; 
+                overflow-x: hidden;
+                overflow-y: auto; /* மொபைலில் Scroll செய்ய அனுமதி */
+            }
+            .split-screen {
+                flex-direction: column; /* இடது-வலது என்பதை மேல-கீழே என மாற்றுகிறது */
+                height: auto;
+                min-height: 100vh;
+                padding: 100px 20px 20px 20px;
+                gap: 20px;
+            }
+            .panel-box {
+                flex: none;
+                height: auto;
+                min-height: 400px; /* ஒவ்வொரு கட்டத்திற்கும் குறைந்தபட்ச உயரம் */
+            }
+        }
+
+        /* Mobile Phones (Screens 600px and below) */
+        @media screen and (max-width: 600px) {
+            .top-nav { padding: 0 15px; }
+            .nav-logo-area img { width: 45px; }
+            .nav-btn {
+                padding: 0 10px;
+                font-size: 0.8rem;
+                height: 35px;
+            }
+            .nav-btn-area { gap: 10px; }
+            .split-screen {
+                padding: 90px 10px 15px 10px;
+                gap: 15px;
+            }
+            .panel-box { padding: 15px; }
+            .panel-header { font-size: 1.1rem; margin-bottom: 15px; }
+            
+            .tab-btn { font-size: 0.8rem; height: 35px; padding: 0 5px; }
+            .action-btn, .custom-file-upload { font-size: 0.9rem; height: 40px; }
+            
+            .file-upload-wrapper { flex-direction: column; gap: 5px; height: auto; padding: 10px; }
+            
+            .status-box h2 { font-size: 1.2rem; }
+            .status-box p { font-size: 0.85rem; }
+            
+            .modal-content {
+                width: 90%; /* மொபைலில் வார்னிங் பாக்ஸ் சுருங்க */
+                margin: 20% auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="cyber-bg">
+
+    <video autoplay muted loop class="bg-video">
+        <source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4">
+    </video>
+
+    <nav class="top-nav">
+        <div class="nav-logo-area"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></div>
+        <div class="nav-btn-area">
+            <a href="/history" class="nav-btn"><i class="fa fa-clock-rotate-left"></i> History</a>
+            <a href="/logout" class="nav-btn logout"><i class="fa fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="split-screen">
+        <div class="panel-box">
+            <h3 class="panel-header"><i class="fa fa-qrcode" style="color:#00ffff;"></i> Input Scan</h3>
+            
+            <div class="tab-row">
+                <button class="tab-btn active" onclick="switchTab('camera-tab')"><i class="fa fa-camera"></i> Camera</button>
+                <button class="tab-btn" onclick="switchTab('upload-tab')"><i class="fa fa-upload"></i> Upload</button>
+                <button class="tab-btn" onclick="switchTab('paste-tab')"><i class="fa fa-paste"></i> Clipboard</button>
+            </div>
+
+            <div id="camera-tab" class="tab-content active">
+                <div class="camera-box"><div id="reader"></div></div>
+            </div>
+
+            <div id="upload-tab" class="tab-content" style="justify-content: center;">
+                <div class="file-upload-wrapper">
+                    <label for="qrImage" class="custom-file-upload">
+                        <i class="fa fa-folder-open"></i> Choose Image
+                    </label>
+                    <input type="file" id="qrImage" accept="image/*" style="display:none;" onchange="updateFileName(this)">
+                    <span id="file-name" class="file-name-display">No file chosen</span>
+                </div>
+                
+                <button class="action-btn" onclick="scanUploadedImage()" style="width: 100%;"><i class="fa fa-search"></i> Analyze Image</button>
+                <div id="reader-hidden" style="display:none;"></div>
+            </div>
+
+            <div id="paste-tab" class="tab-content" style="justify-content: center;">
+                <input type="text" id="manual-data" placeholder="Paste URL or QR data here..." style="margin-bottom: 20px; height: 45px; padding-left: 12px; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: white; outline: none;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="action-btn" onclick="pasteFromClipboard()" style="flex:1;"><i class="fa fa-clipboard"></i> Paste</button>
+                    <button class="action-btn" onclick="analyzeManualData()" style="flex:1;"><i class="fa fa-shield-halved"></i> Analyze</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-box" style="overflow-y: auto;">
+            <h3 class="panel-header"><i class="fa fa-microchip" style="color:#00ffff;"></i> Cyber Threat Analysis</h3>
+            
+            <div id="waiting-state" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; color: white;">
+                <i class="fa-solid fa-radar fa-spin fa-3x" style="color: #00ffff; opacity: 0.8;"></i>
+                <p style="margin-top:20px; font-size: 1rem; opacity: 0.8;">Awaiting scan data input...</p>
+            </div>
+
+            <div id="result-state" style="display:none; flex:1; flex-direction:column; color: white; width: 100%;">
+                
+                <div id="status-box" class="status-box">
+                    <h2 id="risk-text">--</h2>
+                    <p>Threat Score: <span id="score-text" style="font-weight: bold; color: white;">0</span>/100</p>
+                </div>
+                
+                <div style="width: 100%; background:rgba(255,255,255,0.03); padding:15px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box; margin-bottom: 15px;">
+                    <p style="margin:0 0 8px 0; color:#888; font-size:0.85rem;"><i class="fa fa-link"></i> Extracted Payload:</p>
+                    <p id="payload-display" style="margin:0; word-break:break-all; font-family:monospace; font-size: 0.95rem;"></p>
+                </div>
+
+                <div id="threat-report-container" style="width: 100%; margin-top: 15px; text-align: left; display: none;">
+                    <p style="margin:0 0 8px 0; color:#888; font-size:0.85rem;"><i class="fa fa-list-check"></i> Analysis Details:</p>
+                    <div id="threat-reasons" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem;"></div>
+                </div>
+
+                <a id="visit-link-btn" href="#" target="_blank" class="action-btn" style="display:none; width:100%; margin-top: 15px;">
+                    </a>
+
+                <div style="margin-top: 15px; width: 100%;">
+                    <button class="action-btn" onclick="resetScanner()" style="width: 100%;"><i class="fa fa-rotate-right"></i> Scan Another</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dangerModal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-triangle-exclamation fa-fade fa-4x" style="color:#ff3c3c; margin-bottom:15px;"></i>
+            <h2 style="color:#ff3c3c; margin-top:0; font-size: 1.5rem;">THREAT DETECTED</h2>
+            <p style="font-size: 0.95rem;">We blocked this action. The scanned QR code contains a highly dangerous or malicious link!</p>
+            <p id="danger-link" style="color:#aaa; word-break:break-all; font-family:monospace; background:rgba(255,0,0,0.1); padding:10px; border-radius:5px; margin-top: 15px; font-size: 0.9rem;"></p>
+            <button class="action-btn" onclick="document.getElementById('dangerModal').style.display='none'; resetScanner();" style="border-color:#ff3c3c; background: rgba(255,60,60,0.15); color: #ff3c3c; margin-top:15px; width: 100%;"><i class="fa fa-times"></i> Close Warning</button>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode;
+        let redirectTimer; 
+        const scanBeep = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
+
+        function updateFileName(input) {
+            const fileNameSpan = document.getElementById('file-name');
+            if (input.files && input.files[0]) {
+                fileNameSpan.innerText = input.files[0].name;
+            } else {
+                fileNameSpan.innerText = 'No file chosen';
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'camera-tab') {
+                startCamera();
+            } else if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop();
+            }
+        }
+
+        function startCamera() {
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    html5QrCode.start(devices[0].id, { fps: 10, qrbox: {width: 250, height: 250} }, 
+                    (decodedText) => {
+                        html5QrCode.stop();
+                        processData(decodedText);
+                    }).catch(err => console.log(err));
+                }
+            }).catch(err => alert("Camera permissions required."));
+        }
+
+        document.addEventListener('DOMContentLoaded', startCamera);
+
+        function scanUploadedImage() {
+            const fileInput = document.getElementById('qrImage');
+            if (!fileInput.files.length) return alert("Please select an image file first.");
+            
+            const imageQrCode = new Html5Qrcode("reader-hidden");
+            imageQrCode.scanFile(fileInput.files[0], true)
+                .then(decodedText => processData(decodedText))
+                .catch(err => alert("No QR code detected in this image. Try another one."));
+        }
+
+        function pasteFromClipboard() {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById('manual-data').value = text;
+            }).catch(err => alert("Allow clipboard permissions or paste manually."));
+        }
+
+        function analyzeManualData() {
+            let data = document.getElementById('manual-data').value;
+            if(!data) return alert("Please enter or paste data first.");
+            processData(data);
+        }
+
+        /* === NEW: IMPROVED ANALYSIS (SIMILARITY DETECTION) === */
+        function processData(scannedData) {
+            clearInterval(redirectTimer);
+            let cleanData = scannedData.trim();
+            scanBeep.play().catch(e => console.log("Audio play prevented by browser"));
+            
+            document.getElementById('waiting-state').style.display = 'none';
+            document.getElementById('result-state').style.display = 'flex';
+            document.getElementById('payload-display').innerText = cleanData;
+            
+            let statusBox = document.getElementById('status-box');
+            let visitBtn = document.getElementById('visit-link-btn');
+            let reportContainer = document.getElementById('threat-report-container');
+            let reasonsBox = document.getElementById('threat-reasons');
+            
+            visitBtn.style.display = 'none';
+            reportContainer.style.display = 'none';
+            
+            document.getElementById('risk-text').innerText = "ANALYZING...";
+            document.getElementById('risk-text').style.color = "white";
+            statusBox.style.borderColor = "rgba(0, 255, 255, 0.5)";
+            statusBox.style.boxShadow = "0 0 15px rgba(0, 255, 255, 0.2)";
+
+            // PRE-SCAN: Brand Protection Check
+            const brands = ["google", "paypal", "amazon", "microsoft", "apple", "facebook", "instagram"];
+            let brandAlert = null;
+            
+            try {
+                const url = new URL(cleanData.startsWith('http') ? cleanData : 'https://' + cleanData);
+                const host = url.hostname.toLowerCase();
+                
+                brands.forEach(brand => {
+                    // Check if it looks like a brand but ISN'T the real domain
+                    // Example: g00gle.com contains "gle" or is very similar
+                    if(host.includes(brand.substring(0, 4)) && !host.includes(brand + ".com")) {
+                        brandAlert = `Potential Brand Impersonation: This URL looks similar to ${brand.toUpperCase()} but may be fake.`;
+                    }
+                });
+            } catch(e) {}
+
+            fetch("/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: cleanData })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let color;
+                
+                // Add our custom JS alert to the backend reasons if found
+                if(brandAlert) data.reasons.unshift(brandAlert);
+
+                if (data.reasons && data.reasons.length > 0) {
+                    reasonsBox.innerHTML = '';
+                    data.reasons.forEach(reason => {
+                        reasonsBox.innerHTML += `<div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #00ffff; color: #ccc;">
+                            <i class="fa-solid fa-angle-right" style="color:#00ffff; margin-right: 8px;"></i>${reason}
+                        </div>`;
+                    });
+                    reportContainer.style.display = 'block';
+                }
+                
+                if(data.level === "Safe" && !brandAlert) {
+                    color = "#00ff88"; 
+                    statusBox.style.borderColor = color;
+                    statusBox.style.boxShadow = `0 0 20px rgba(0, 255, 136, 0.15)`;
+                    
+                    let reasonDivs = reasonsBox.querySelectorAll('div');
+                    reasonDivs.forEach(div => { div.style.borderLeftColor = color; div.querySelector('i').style.color = color; });
+                    
+                    if (cleanData.startsWith('http')) {
+                        visitBtn.href = cleanData;
+                        visitBtn.style.display = 'flex';
+                        
+                        let secondsLeft = 10;
+                        visitBtn.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Website (Auto-redirect in ${secondsLeft}s)`;
+                        
+                        redirectTimer = setInterval(() => {
+                            secondsLeft--;
+                            if (secondsLeft > 0) {
+                                visitBtn.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Website (Auto-redirect in ${secondsLeft}s)`;
+                            } else {
+                                clearInterval(redirectTimer);
+                                window.location.href = cleanData;
+                            }
+                        }, 1000);
+                    }
+
+                } else if(data.level === "Medium Risk" || brandAlert) {
+                    // If brandAlert is caught, we force it to at least Medium Risk
+                    color = "#ffd700"; 
+                    statusBox.style.borderColor = color;
+                    statusBox.style.boxShadow = `0 0 20px rgba(255, 215, 0, 0.15)`;
+                    
+                    let reasonDivs = reasonsBox.querySelectorAll('div');
+                    reasonDivs.forEach(div => { div.style.borderLeftColor = color; div.querySelector('i').style.color = color; });
+
+                    if (cleanData.startsWith('http')) {
+                        visitBtn.href = cleanData;
+                        visitBtn.style.display = 'flex';
+                        visitBtn.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Proceed with Caution';
+                    }
+                    if(brandAlert) data.level = "Medium Risk";
+
+                } else {
+                    color = "#ff3c3c"; 
+                    statusBox.style.borderColor = color;
+                    statusBox.style.boxShadow = `0 0 20px rgba(255, 60, 60, 0.15)`;
+                    
+                    let reasonDivs = reasonsBox.querySelectorAll('div');
+                    reasonDivs.forEach(div => { div.style.borderLeftColor = color; div.querySelector('i').style.color = color; });
+
+                    document.getElementById('danger-link').innerText = cleanData;
+                    setTimeout(() => { document.getElementById('dangerModal').style.display = 'block'; }, 500);
+                }
+
+                document.getElementById('risk-text').innerText = data.level;
+                document.getElementById('risk-text').style.color = color;
+                document.getElementById('score-text').innerText = data.score;
+            });
+        }
+
+        function resetScanner() {
+            clearInterval(redirectTimer);
+            document.getElementById('waiting-state').style.display = 'flex';
+            document.getElementById('result-state').style.display = 'none';
+            document.getElementById('manual-data').value = "";
+            document.getElementById('qrImage').value = "";
+            document.getElementById('file-name').innerText = "No file chosen";
+            
+            document.getElementById('status-box').style.borderColor = "rgba(255, 255, 255, 0.1)";
+            document.getElementById('status-box').style.boxShadow = "none";
+
+            if(document.getElementById('camera-tab').classList.contains('active')) {
+                startCamera();
+            }
+        }
+    </script>
+</body>
+</html>

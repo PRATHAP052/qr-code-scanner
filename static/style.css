@@ -1,0 +1,144 @@
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+color:white;
+}
+
+/* CYBER IMAGE BACKGROUND */
+.cyber-bg{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background: transparent;
+background-size:cover;
+position:relative;
+overflow:hidden;
+}
+
+/* VIDEO STYLING */
+.bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0; 
+}
+
+/* DARK OVERLAY */
+.cyber-bg::before{
+content:"";
+position:absolute;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+z-index: 1;
+}
+
+/* LOGIN CARD */
+.auth-card{
+background:rgba(0,0,0,0.1);
+backdrop-filter:blur(20px);
+border-radius:20px;
+padding:40px;
+width:380px;
+text-align:center;
+box-shadow:0 0 30px rgba(0,255,255,0.2);
+position:relative;
+z-index:2;
+/* SMALL FLOAT MOVEMENT */
+animation:floatCard 6s ease-in-out infinite;
+}
+
+/* CARD FLOAT */
+@keyframes floatCard{
+0%{transform:translateY(0px);}
+50%{transform:translateY(-8px);}
+100%{transform:translateY(0px);}
+}
+
+/* LOGO */
+.logo-img{
+width:90px;
+margin-bottom:15px;
+animation:logoGlow 3s infinite;
+}
+
+@keyframes logoGlow{
+0%{filter:drop-shadow(0 0 5px #00ffff)}
+50%{filter:drop-shadow(0 0 25px #00ffff)}
+100%{filter:drop-shadow(0 0 5px #00ffff)}
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    height: 45px;
+    margin-bottom: 15px; /* Uses bottom margin for perfect consistent spacing */
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08);
+    padding-left: 12px;
+    padding-right: 40px; 
+    color: white;
+    box-sizing: border-box;
+    display: block; /* Forces the browser to respect the margins */
+}
+
+/* PASSWORD BOX */
+.password-box {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px; /* Matches the input spacing */
+}
+
+.password-box input {
+    margin-bottom: 0; /* Prevents double-spacing inside the box */
+}
+.eye-icon{
+position:absolute;
+right:12px;
+top:50%;
+transform:translateY(-50%);
+font-size:14px;
+color:white;
+cursor:pointer;
+}
+
+/* BUTTON ROW */
+.btn-row{
+display:flex;
+gap:10px;
+margin-top:15px;
+}
+
+/* BUTTON */
+.btn{
+flex:1;
+height:45px;
+border-radius:10px;
+border:1px solid rgba(255,255,255,0.3);
+background:rgba(255,255,255,0.15);
+color:white;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+text-decoration:none;
+transition:0.3s;
+}
+
+.btn:hover{
+background:rgba(0,255,255,0.35);
+box-shadow:0 0 15px #00ffff;
+}
+
+.link{
+margin-top:12px;
+display:block;
+font-size:14px;
+color:#c6c6ff;
+}
