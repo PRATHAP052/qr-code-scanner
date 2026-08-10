@@ -23,8 +23,8 @@ login_manager.login_view = "login"
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'ezilnithi8@gmail.com'
-app.config['MAIL_PASSWORD'] = 'mflwasfnjcrgevge'
+app.config['MAIL_USERNAME'] = 'prathap005prathap@gmail.com'
+app.config['MAIL_PASSWORD'] = 'axdgvzkdpxzxumru'
 mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
