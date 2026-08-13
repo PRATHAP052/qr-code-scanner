@@ -1,4 +1,3 @@
-
 function analyzeQR(){
     let data = document.getElementById("qrdata").value;
 
@@ -49,7 +48,6 @@ function analyzeQR(){
     });
 }
 
-
 function pasteClipboard(){
     navigator.clipboard.readText()
     .then(text => {
@@ -57,7 +55,6 @@ function pasteClipboard(){
     });
 }
 
-// 
 function scanImage(){
     let file = document.getElementById("qrImage").files[0];
 
@@ -78,10 +75,8 @@ function scanImage(){
     });
 }
 
-
 function startLiveScanner() {
     const html5QrCode = new Html5Qrcode("reader");
-
     html5QrCode.start(
         { facingMode: "environment" }, 
         {
@@ -101,6 +96,28 @@ function startLiveScanner() {
         }
     ).catch((err) => {
         console.error(`Unable to start scanning, error: ${err}`);
-        alert("Camera permission denied or not supported on this browser!");
+        
+       
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                let cameraId = devices[devices.length - 1].id; 
+                
+                html5QrCode.start(
+                    cameraId,
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText, decodedResult) => {
+                        document.getElementById("qrdata").value = decodedText;
+                        html5QrCode.stop().then(() => { analyzeQR(); });
+                    },
+                    (errorMessage) => {}
+                ).catch(innerErr => {
+                    alert("Camera permission denied or not supported on this browser!");
+                });
+            } else {
+                alert("Camera permission denied or not supported on this browser!");
+            }
+        }).catch(camErr => {
+            alert("Camera permission denied or not supported on this browser!");
+        });
     });
 }
