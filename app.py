@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
@@ -18,14 +17,6 @@ db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
-
-# EMAIL CONFIG
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'prathap005prathap@gmail.com'
-app.config['MAIL_PASSWORD'] = 'axdgvzkdpxzxumru'
-mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -62,36 +53,18 @@ def login():
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
-        username, email = request.form['username'], request.form['email']
+        username, email, password_raw = request.form['username'], request.form['email'], request.form['password']
+        
         if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
             return render_template("register.html", error="User already exists!")
         
-        password = generate_password_hash(request.form['password'])
-        otp = str(random.randint(100000, 999999))
-        session['otp'], session['temp_user'] = otp, {"username":username,"email":email,"password":password}
-
-        # Safe Email sending so server won't crash on timeout
-        try:
-            msg = Message("EZ Checker OTP", sender=app.config['MAIL_USERNAME'], recipients=[email])
-            msg.body = f"Your verification code is: {otp}"
-            mail.send(msg)
-        except Exception as e:
-            print(f"Mail Error: {e}")
-            
-        return redirect(url_for("verify"))
+        hashed_password = generate_password_hash(password_raw)
+        db.session.add(User(username=username, email=email, password=hashed_password))
+        db.session.commit()
+        
+        return redirect(url_for("login"))
+        
     return render_template("register.html")
-
-@app.route("/verify", methods=["GET","POST"])
-def verify():
-    if request.method == "POST":
-        if request.form['otp'] == session.get('otp'):
-            u = session.get('temp_user')
-            if u:
-                db.session.add(User(username=u['username'], email=u['email'], password=u['password']))
-                db.session.commit()
-                session.pop('otp', None); session.pop('temp_user', None)
-                return redirect(url_for("login"))
-    return render_template("verify.html")
 
 @app.route("/logout")
 @login_required
@@ -181,11 +154,7 @@ def forgot():
         if user:
             token = serializer.dumps(email, salt='reset-password')
             link = url_for('reset_password', token=token, _external=True)
-            try:
-                msg = Message("Password Reset", sender=app.config['MAIL_USERNAME'], recipients=[email])
-                msg.body = f"Reset Link: {link}"; mail.send(msg)
-            except Exception as e:
-                print(f"Mail Error: {e}")
+            # Mail sending removed to avoid server timeout/errors
     return render_template("forgot.html")
 
 @app.route("/reset/<token>", methods=["GET","POST"])
