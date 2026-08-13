@@ -70,6 +70,7 @@ def register():
         otp = str(random.randint(100000, 999999))
         session['otp'], session['temp_user'] = otp, {"username":username,"email":email,"password":password}
 
+        # Safe Email sending so server won't crash on timeout
         try:
             msg = Message("EZ Checker OTP", sender=app.config['MAIL_USERNAME'], recipients=[email])
             msg.body = f"Your verification code is: {otp}"
@@ -85,10 +86,11 @@ def verify():
     if request.method == "POST":
         if request.form['otp'] == session.get('otp'):
             u = session.get('temp_user')
-            db.session.add(User(username=u['username'], email=u['email'], password=u['password']))
-            db.session.commit()
-            session.pop('otp', None); session.pop('temp_user', None)
-            return redirect(url_for("login"))
+            if u:
+                db.session.add(User(username=u['username'], email=u['email'], password=u['password']))
+                db.session.commit()
+                session.pop('otp', None); session.pop('temp_user', None)
+                return redirect(url_for("login"))
     return render_template("verify.html")
 
 @app.route("/logout")
