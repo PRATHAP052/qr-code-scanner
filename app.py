@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-# EMAIL CONFIG (Update password with your App Password)
+# EMAIL CONFIG
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -70,9 +70,13 @@ def register():
         otp = str(random.randint(100000, 999999))
         session['otp'], session['temp_user'] = otp, {"username":username,"email":email,"password":password}
 
-        msg = Message("EZ Checker OTP", sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.body = f"Your verification code is: {otp}"
-        mail.send(msg)
+        try:
+            msg = Message("EZ Checker OTP", sender=app.config['MAIL_USERNAME'], recipients=[email])
+            msg.body = f"Your verification code is: {otp}"
+            mail.send(msg)
+        except Exception as e:
+            print(f"Mail Error: {e}")
+            
         return redirect(url_for("verify"))
     return render_template("register.html")
 
@@ -83,7 +87,7 @@ def verify():
             u = session.get('temp_user')
             db.session.add(User(username=u['username'], email=u['email'], password=u['password']))
             db.session.commit()
-            session.pop('otp'); session.pop('temp_user')
+            session.pop('otp', None); session.pop('temp_user', None)
             return redirect(url_for("login"))
     return render_template("verify.html")
 
@@ -144,9 +148,9 @@ def history():
 def admin():
     if current_user.username != 'admin': return redirect(url_for("scanner"))
     return render_template("admin.html", users=User.query.all(), total=User.query.count(),
-                           total_scans=ScanHistory.query.count(),
-                           high_risk=ScanHistory.query.filter_by(level="High Risk").count(),
-                           safe=ScanHistory.query.filter_by(level="Safe").count())
+                            total_scans=ScanHistory.query.count(),
+                            high_risk=ScanHistory.query.filter_by(level="High Risk").count(),
+                            safe=ScanHistory.query.filter_by(level="Safe").count())
 
 @app.route("/admin/edit/<int:id>", methods=["POST"])
 @login_required
@@ -175,8 +179,11 @@ def forgot():
         if user:
             token = serializer.dumps(email, salt='reset-password')
             link = url_for('reset_password', token=token, _external=True)
-            msg = Message("Password Reset", sender=app.config['MAIL_USERNAME'], recipients=[email])
-            msg.body = f"Reset Link: {link}"; mail.send(msg)
+            try:
+                msg = Message("Password Reset", sender=app.config['MAIL_USERNAME'], recipients=[email])
+                msg.body = f"Reset Link: {link}"; mail.send(msg)
+            except Exception as e:
+                print(f"Mail Error: {e}")
     return render_template("forgot.html")
 
 @app.route("/reset/<token>", methods=["GET","POST"])
