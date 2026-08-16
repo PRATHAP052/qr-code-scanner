@@ -1,16 +1,18 @@
+let html5QrCode = null;
+
 // 1. Analyze text or manually entered data
-function analyzeQR(){
+function analyzeQR() {
     let data = document.getElementById("qrdata").value;
 
-    if(!data){
-        alert("No QR data");
+    if (!data) {
+        alert("No QR data found");
         return;
     }
 
-    fetch("/scan",{
+    fetch("/scan", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({data: data})
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: data })
     })
     .then(res => res.json())
     .then(data => {
@@ -18,17 +20,15 @@ function analyzeQR(){
         let emoji = "";
         let msg = "";
 
-        if(data.score >= 80){
+        if (data.score >= 80) {
             color = "lime";
             emoji = "🟢🛡️🙂";
             msg = "SAFE WEBSITE";
-        }
-        else if(data.score >= 50){
+        } else if (data.score >= 50) {
             color = "orange";
             emoji = "⚠️😐";
             msg = "SUSPICIOUS WEBSITE";
-        }
-        else{
+        } else {
             color = "red";
             emoji = "🚨☠️";
             msg = "DANGEROUS WEBSITE";
@@ -50,7 +50,7 @@ function analyzeQR(){
 }
 
 // 2. Paste text directly from clipboard
-function pasteClipboard(){
+function pasteClipboard() {
     navigator.clipboard.readText()
     .then(text => {
         document.getElementById("qrdata").value = text;
@@ -58,73 +58,90 @@ function pasteClipboard(){
 }
 
 // 3. Scan QR code from an uploaded image file
-function scanImage(){
+function scanImage() {
     let file = document.getElementById("qrImage").files[0];
 
-    if(!file){
-        alert("Select image first");
+    if (!file) {
+        alert("Please select an image first");
         return;
     }
 
-    const html5QrCode = new Html5Qrcode("reader");
-
-    html5QrCode.scanFile(file, true)
+    const scanner = new Html5Qrcode("reader");
+    scanner.scanFile(file, true)
     .then(decodedText => {
         document.getElementById("qrdata").value = decodedText;
         analyzeQR(); 
     })
     .catch(() => {
-        alert("QR not detected");
+        alert("QR code not detected");
     });
 }
 
-// 4. Start live camera scanner with guaranteed back camera selection
+// 4. Robust multi-level fallback method to guarantee back camera opening
 function startLiveScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
+    // Stop any existing active scanner instance first
+    if (html5QrCode) {
+        try {
+            html5QrCode.stop().catch(() => {});
+        } catch(e) {}
+    }
 
-    Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-            let cameraId = devices[0].id;
+    html5QrCode = new Html5Qrcode("reader");
 
-            // Search through camera labels to find the back/rear/environment camera
-            for (let device of devices) {
-                let label = device.label.toLowerCase();
-                if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
-                    cameraId = device.id;
-                    break;
-                }
-            }
-
-            // Fallback: If multiple cameras exist and label wasn't caught, select the last device (typically back camera)
-            if (devices.length > 1 && cameraId === devices[0].id) {
-                cameraId = devices[devices.length - 1].id;
-            }
-
-            html5QrCode.start(
-                cameraId,
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
-                },
-                (decodedText, decodedResult) => {
-                    document.getElementById("qrdata").value = decodedText;
-                    html5QrCode.stop().then(() => {
-                        analyzeQR();
-                    }).catch(err => {
-                        console.error("Failed to stop scanner.", err);
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    // Attempt 1: Try exact environment (back) camera constraint
+    html5QrCode.start(
+        { facingMode: { exact: "environment" } }, 
+        config,
+        (decodedText) => {
+            document.getElementById("qrdata").value = decodedText;
+            html5QrCode.stop().then(() => {
+                analyzeQR();
+            }).catch(err => console.log(err));
+        },
+        (errorMessage) => {}
+    ).catch(err => {
+        console.log("Exact environment failed, trying standard environment...", err);
+        
+        // Attempt 2: Fallback to standard environment facingMode
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                document.getElementById("qrdata").value = decodedText;
+                html5QrCode.stop().then(() => {
+                    analyzeQR();
+                }).catch(err => console.log(err));
+            },
+            (errorMessage) => {}
+        ).catch(fallbackErr => {
+            console.log("Environment failed, loading last camera device ID...", fallbackErr);
+            
+            // Attempt 3: Retrieve full device list and target the last camera index (typically the back camera)
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length > 0) {
+                    let targetCamId = devices[devices.length - 1].id; 
+                    
+                    html5QrCode.start(
+                        targetCamId,
+                        config,
+                        (decodedText) => {
+                            document.getElementById("qrdata").value = decodedText;
+                            html5QrCode.stop().then(() => {
+                                analyzeQR();
+                            }).catch(err => console.log(err));
+                        },
+                        (errorMessage) => {}
+                    ).catch(finalErr => {
+                        alert("Camera could not be opened. Please check permissions and ensure you are using HTTPS!");
                     });
-                },
-                (errorMessage) => {}
-            ).catch((err) => {
-                console.error(`Unable to start camera, error: ${err}`);
-                alert("Could not start back camera. Please check permissions!");
+                } else {
+                    alert("No cameras detected on this device!");
+                }
+            }).catch(() => {
+                alert("Camera permission denied!");
             });
-
-        } else {
-            alert("No cameras found on this device!");
-        }
-    }).catch(err => {
-        console.error("Camera error", err);
-        alert("Camera permission denied or not supported!");
+        });
     });
 }
